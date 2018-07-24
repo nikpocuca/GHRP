@@ -5,7 +5,7 @@ library(maps)
 library(mapdata)
 
 
-setwd("~/GHRP")
+setwd("~/GitRepos/GHRP")
 
 # Load storm data. 
 strmEvents <- read.csv("StormEvents_locations-ftp_v1.0_d2014_c20180718.csv")
@@ -86,8 +86,8 @@ for (i in 1:length(corRichPeople[,1])){
   richDistances <- append(richDistances,min(calcDistance(corRichPeople[i,],corStrmEvents)))
 }
 
-summary(poorDistances)
-summary(richDistances)
+summary(poorDistances*110.574) 
+summary(richDistances*110.574)
 
 # Now to calculate difference between each zip code, 
 # and the coordinate of the extreme event.

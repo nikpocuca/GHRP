@@ -21,7 +21,7 @@ Extreme weather events in the U.S. are regularly tracked by the National Oceanic
 
 The NCDC Storm Events database is provided by the National Weather Service (NWS) and contain statistics on personal injuries and damage estimates. (ref. gov.noaa.ncdc:C00510). 
 
-#### The question is, are high-income or low-income households suseptible to extreme weather events? 
+#### The question is, are high-income or low-income households more suseptible to extreme weather events? 
 
 The US Household Income dataset provided by Golden Oak Research Group contains 32,000 records on US Household Income Statistics & Geo Locations. The dataset originally developed for real estate and business investment research. Income is a vital element when determining both quality and socioeconomic features of a given geographic location. (ref. Golden Oak Research Group, LLC. “U.S. Income Database Kaggle”. Publication: 5, August 2017.)
 
@@ -62,3 +62,99 @@ gg1 +
 ```
 
 As we can see extreme weather events span the entire mainland U.S. Majority of the events are held along the eastern seaboard. 
+
+We then superimpose the dataset of US income where blue is the poverty line ( < $25,000 USD) and green is the upper middle class ( $100,000 > ). 
+
+```{r}
+
+
+poorPeople <- subset(incomeKag, Lon > -140 & Mean < 25000 & Lat > 20 & Lat < 50)
+
+corPoorPeople <- data.frame(lat = poorPeople$Lat,
+                              long = poorPeople$Lon,
+                              names= poorPeople$Place,
+                              stringsAsFactors = FALSE)
+
+
+richPeople <- subset(incomeKag, Lon > -140 & Mean > 100000 & Lat > 20 & Lat < 50)
+
+corRichPeople <- data.frame(lat = richPeople$Lat,
+                            long = richPeople$Lon,
+                            names = richPeople$Place,
+                            stringsAsFactors = FALSE)
+
+gg2 = ggplot() + geom_polygon(data = usa, aes(x=long, y = lat, group = group)) + 
+  coord_fixed(1.3) + geom_point(data = corPoorPeople, 
+           aes(x = long, y = lat, group = "Poverty Class"), color = "blue", size = 1) +
+      geom_point(data = corStrmEvents,
+           aes(x = long, y = lat, group = "Extreme Weather Events"), color = "red", size = 0.0001) +
+      geom_point(data = corRichPeople,
+           aes(x = long, y = lat, group = "Upper Middle Class"),color = "green", size = 1) 
+gg2 
+
+```
+
+We can see that most of the green (rich) points are clustered around the major cities, while the blue (poor) points are fairly spread with some clumping. 
+
+Now we simply do a calculation of the minimum distance between every green point to red point, and then every blue point to red point. (ie, find the closest weather event to each income datapoint.)
+
+
+To do this, I create a function called calcDistance which takes in a person, and a weather list object that has both longitude and latitude. 
+
+```{r}
+# Calculate the distance for each poor person and rich person 
+# to the nearest extreme weather event. 
+
+calcDistance <- function(person,weather) {
+  xE = weather$long
+  yE = weather$lat 
+  xS = person$long 
+  yS = person$lat
+  
+  # Pythogram Theorem. (I know the earth is a curved surface but 
+  # the curvature should be negligable if the locations are sufficiently close)
+  return(distance = (xE - xS)^2 + (yE - yS)^2)
+}
+
+poorDistances <- c()
+for (i in 1:length(corPoorPeople[,1])){
+  poorDistances <- append(poorDistances,min(calcDistance(corPoorPeople[i,],corStrmEvents)))
+}
+
+richDistances <- c()
+for (i in 1:length(corRichPeople[,1])){
+  richDistances <- append(richDistances,min(calcDistance(corRichPeople[i,],corStrmEvents)))
+}
+
+```
+
+Now that we have the distance to the nearest weather point we simply do a summary of both the rich and the poor distances. 
+
+```{r}
+# Convert from latitude/longitutde to km for sanity. 
+summary(poorDistances*110.574) 
+summary(richDistances*110.574)
+```
+
+### Summary 
+We can see that the mean distance for rich people is signficiantly closer than the mean distance for poor people.
+That means on average, can we say that the rich neighborhoods are consistently closer to extreme weather events? 
+
+
+From the rough summary it does indeed. 
+
+After looking at histograms it seems that the distances are modeled by one of the heavy tailed solutions. Taking the logorithm allows for a better looking plot. 
+
+
+```{r}
+hist(log(poorDistances*110.574),
+     main="Poor to Nearest Event",
+     xlab = "Distance",
+     breaks = 40)
+hist(log(richDistances*110.574),
+     main="Rich to Nearest Event",
+     xlab = "Distance",
+     breaks = 40)
+```
+
+My assumption is that this is the lognormal distribution. Defined as 
