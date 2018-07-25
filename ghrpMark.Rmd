@@ -1,5 +1,5 @@
 ---
-title: "God Hates Rich People"
+title: "Does God Hate Rich People?"
 author: "Nik Počuča"
 date: "July 23, 2018"
 output: html_document
@@ -21,7 +21,7 @@ Extreme weather events in the U.S. are regularly tracked by the National Oceanic
 
 The NCDC Storm Events database is provided by the National Weather Service (NWS) and contain statistics on personal injuries and damage estimates. (ref. gov.noaa.ncdc:C00510). 
 
-#### The question is, are high-income or low-income households more suseptible to extreme weather events? 
+#### The question is, are high-income or low-income households more susceptible to extreme weather events? 
 
 The US Household Income dataset provided by Golden Oak Research Group contains 32,000 records on US Household Income Statistics & Geo Locations. The dataset originally developed for real estate and business investment research. Income is a vital element when determining both quality and socioeconomic features of a given geographic location. (ref. Golden Oak Research Group, LLC. “U.S. Income Database Kaggle”. Publication: 5, August 2017.)
 
@@ -157,4 +157,34 @@ hist(log(richDistances*110.574),
      breaks = 40)
 ```
 
-My assumption is that this is the lognormal distribution. Defined as 
+My assumption is that this is the lognormal distribution.
+
+Consider a random variable $U$ having univariate log-normal distribution with parameters $\sigma \in \mathbb{R}_{+}$ $\mu \in \mathbb{R}$. Have $u \in \mathbb{R}_+$, then the probability density function of random variable $U$ is defined as \footnote{For full definition see \cite{johnson1995continuous}}
+$$\mathcal{LN}(u; \mu, \sigma) = \frac{1}{u\sigma\sqrt{2\pi}}\exp\left[-\frac{(\ln u - \mu)^2}{2\sigma^2}	\right].$$ 
+
+
+Now lets compute the log(distance) and check the summary. 
+
+```{r}
+summary(log(poorDistances*110.574))
+summary(log(richDistances*110.574))
+```
+
+
+We see a mean of -2.0975 for rich, vs -2.1708 for poor. 
+
+With the log-normal assumption we can say that the rich people are actually farther away from the extreme events than poor people. 
+
+However, is this really the case? 
+
+
+Let's compare the two mean's together using the Student's t-test. 
+
+```{r}
+#Students t-test 
+t.test(log(poorDistances*110.574),log(richDistances*110.574)) 
+```
+
+Since our p-value is too large we cannot reject the null hypothesis.
+
+##Therefore neither rich people or poor people are more likely to be hit with extreme weather events. 
